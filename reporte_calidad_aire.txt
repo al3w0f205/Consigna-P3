@@ -1,0 +1,33 @@
+REPORTE DE CALIDAD DEL AIRE
+------------------------------------------------------
+
+ZONA: Centro Historico
+  Niveles Actuales:
+    CO2: 200.00 | SO2: 200.00 | NO2: 1.00 | PM2.5: 1.00
+  Prediccion (24h):
+    CO2: 316.01 | SO2: 110.57 | NO2: 19.07 | PM2.5: 12.88
+
+ZONA: Zona Norte Industrial
+  Niveles Actuales:
+    CO2: 480.00 | SO2: 25.00 | NO2: 38.00 | PM2.5: 22.00
+  Prediccion (24h):
+    CO2: 487.20 | SO2: 25.38 | NO2: 38.57 | PM2.5: 22.33
+
+ZONA: Zona Sur Residencial
+  Niveles Actuales:
+    CO2: 380.00 | SO2: 12.00 | NO2: 25.00 | PM2.5: 18.00
+  Prediccion (24h):
+    CO2: 379.39 | SO2: 11.98 | NO2: 24.96 | PM2.5: 17.97
+
+ZONA: Zona Este Comercial
+  Niveles Actuales:
+    CO2: 450.00 | SO2: 18.00 | NO2: 42.00 | PM2.5: 28.00
+  Prediccion (24h):
+    CO2: 462.77 | SO2: 18.51 | NO2: 43.19 | PM2.5: 28.79
+
+ZONA: Zona Oeste Universitaria
+  Niveles Actuales:
+    CO2: 350.00 | SO2: 10.00 | NO2: 20.00 | PM2.5: 15.00
+  Prediccion (24h):
+    CO2: 327.60 | SO2: 9.36 | NO2: 18.72 | PM2.5: 14.04
+
