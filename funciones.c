@@ -1,8 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "funciones.h"
-
-Contaminacion limitesOMS = {400.0f, 40.0f, 25.0f, 15.0f};
 
 void limpiarBuffer(void){
     int c;
@@ -56,43 +55,62 @@ float leerFlotante(const char *mensaje, float min, float max){
     }
 }
 
-void guardarDatos(Zona *zonas, int numZonas){
+void guardarDatos(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZonasPermitidas){
     FILE *archivo = fopen(ARCHIVO_DATOS, "wb");
     if (!archivo){
         printf("  [ERROR] No se pudo abrir '%s' para escritura.\n", ARCHIVO_DATOS);
         return;
     }
     fwrite(&limitesOMS, sizeof(Contaminacion), 1, archivo);
-
+    fwrite(&maxZonasPermitidas, sizeof(int), 1, archivo);
     fwrite(&numZonas, sizeof(int), 1, archivo);
-    fwrite(zonas, sizeof(Zona), numZonas, archivo);
+    
+    if (numZonas > 0 && zonas != NULL) {
+        fwrite(zonas, sizeof(Zona), numZonas, archivo);
+    }
     fclose(archivo);
     printf("  Datos guardados exitosamente en '%s'.\n", ARCHIVO_DATOS);
 }
 
-int cargarDatos(Zona *zonas){
+int cargarDatos(Zona **zonas, int *capacidadZonas, Contaminacion *limitesOMS, int *maxZonasPermitidas){
     int numZonas = 0;
-    Contaminacion limBackup = limitesOMS;
+    Contaminacion limBackup = *limitesOMS;
+    int maxBackup = *maxZonasPermitidas;
     
     FILE *archivo = fopen(ARCHIVO_DATOS, "rb");
     if (!archivo) return 0;
     
-    if (fread(&limitesOMS, sizeof(Contaminacion), 1, archivo) != 1 ||
+    if (fread(limitesOMS, sizeof(Contaminacion), 1, archivo) != 1 ||
+        fread(maxZonasPermitidas, sizeof(int), 1, archivo) != 1 ||
         fread(&numZonas, sizeof(int), 1, archivo) != 1) {
         
-        limitesOMS = limBackup;
+        *limitesOMS = limBackup;
+        *maxZonasPermitidas = maxBackup;
         fclose(archivo); 
         return 0; 
     }
     
-    if (numZonas > 0 && numZonas <= MAX_ZONAS){
-        if (fread(zonas, sizeof(Zona), numZonas, archivo) != numZonas){
-            limitesOMS = limBackup;
+    if (numZonas > 0){
+        *zonas = (Zona *)malloc(numZonas * sizeof(Zona));
+        if (*zonas == NULL) {
+            *limitesOMS = limBackup;
+            *maxZonasPermitidas = maxBackup;
+            fclose(archivo);
+            return 0;
+        }
+        *capacidadZonas = numZonas;
+        if (fread(*zonas, sizeof(Zona), numZonas, archivo) != numZonas){
+            *limitesOMS = limBackup;
+            *maxZonasPermitidas = maxBackup;
+            free(*zonas);
+            *zonas = NULL;
+            *capacidadZonas = 0;
             fclose(archivo);
             return 0;
         }
     } else {
-        numZonas = 0;
+        *zonas = NULL;
+        *capacidadZonas = 0;
     }
     fclose(archivo);
     return numZonas;
@@ -101,7 +119,7 @@ int cargarDatos(Zona *zonas){
 int menu(void){
     printf("\n CONTROL DE CALIDAD DEL AIRE\n"
            " ----------------------------------------------------------\n"
-           "   1. Configurar limites maximos de contaminacion\n"
+           "   1. Configurar limites de contaminacion y tope de zonas\n"
            "   2. Registrar una nueva zona de la ciudad\n"
            "   3. Actualizar niveles de contaminacion de hoy\n"
            "   4. Ver estado actual del aire\n"
@@ -142,14 +160,14 @@ void imprimirFilaPred(const char *nombre, float actual, float pred, float limite
     printf("  %-34s %10.2f   %10.2f   %s\n", nombre, actual, pred, est);
 }
 
-void imprimirTabla(Contaminacion c){
+void imprimirTabla(Contaminacion c, Contaminacion limitesOMS){
     imprimirFila("Dioxido de Carbono (CO2)",  c.co2,  limitesOMS.co2);
     imprimirFila("Dioxido de Azufre (SO2)",   c.so2,  limitesOMS.so2);
     imprimirFila("Dioxido de Nitrogeno (NO2)", c.no2,  limitesOMS.no2);
     imprimirFila("Particulas Finas (PM2.5)",  c.pm25, limitesOMS.pm25);
 }
 
-void imprimirTablaPrediccion(Contaminacion actual, Contaminacion pred){
+void imprimirTablaPrediccion(Contaminacion actual, Contaminacion pred, Contaminacion limitesOMS){
     imprimirFilaPred("Dioxido de Carbono (CO2)",  actual.co2,  pred.co2,  limitesOMS.co2);
     imprimirFilaPred("Dioxido de Azufre (SO2)",   actual.so2,  pred.so2,  limitesOMS.so2);
     imprimirFilaPred("Dioxido de Nitrogeno (NO2)", actual.no2,  pred.no2,  limitesOMS.no2);
@@ -158,15 +176,18 @@ void imprimirTablaPrediccion(Contaminacion actual, Contaminacion pred){
 
 Contaminacion calcPromedios(Zona *z){
     Contaminacion prom = {0, 0, 0, 0};
-    int d;
-    for (d = 0; d < MAX_DIAS; d++){
-        prom.co2  += z->historial[d].co2;
-        prom.so2  += z->historial[d].so2;
-        prom.no2  += z->historial[d].no2;
-        prom.pm25 += z->historial[d].pm25;
+    int i;
+    if (z->count == 0) return prom;
+    
+    for (i = 0; i < z->count; i++){
+        int pos = (z->head + i) % MAX_DIAS;
+        prom.co2  += z->historial[pos].co2;
+        prom.so2  += z->historial[pos].so2;
+        prom.no2  += z->historial[pos].no2;
+        prom.pm25 += z->historial[pos].pm25;
     }
-    prom.co2 /= MAX_DIAS;  prom.so2 /= MAX_DIAS;
-    prom.no2 /= MAX_DIAS;  prom.pm25 /= MAX_DIAS;
+    prom.co2 /= z->count;  prom.so2 /= z->count;
+    prom.no2 /= z->count;  prom.pm25 /= z->count;
     return prom;
 }
 
@@ -197,6 +218,10 @@ Contaminacion calcPrediccion(Zona *z, float fc, Contaminacion prom){
 void genHistorial(Zona *z, Contaminacion base){
     int d;
     float f;
+    
+    z->head = 0;
+    z->count = MAX_DIAS;
+    
     for (d = 0; d < MAX_DIAS; d++){
         f = 1.0f + (float)((d * 7 + z->id * 13) % 21 - 10) / 100.0f;
         z->historial[d].co2  = base.co2  * f;
@@ -240,17 +265,35 @@ void leerClima(Clima *c){
     c->humedad     = leerFlotante("  Porcentaje de humedad (0 a 100):          ", 0, 100);
 }
 
-void registrarZona(Zona *zonas, int *numZonas){
+void registrarZona(Zona **zonas, int *numZonas, int *capacidadZonas, int maxZonasPermitidas, Contaminacion limitesOMS){
     Zona *n;
     Contaminacion base;
 
-    if (*numZonas >= MAX_ZONAS){
-        printf("\n  [!] No se pueden agregar mas zonas (maximo %d).\n", MAX_ZONAS);
+    if (*numZonas >= maxZonasPermitidas) {
+        printf("\n  [!] Se ha alcanzado el tope maximo de zonas configurado (%d).\n", maxZonasPermitidas);
         return;
     }
 
-    n = &zonas[*numZonas];
+    if (*numZonas >= *capacidadZonas) {
+        int nuevaCapacidad = (*capacidadZonas == 0) ? 2 : (*capacidadZonas * 2);
+        
+        if (nuevaCapacidad > maxZonasPermitidas) {
+            nuevaCapacidad = maxZonasPermitidas;
+        }
+
+        Zona *temp = (Zona *)realloc(*zonas, nuevaCapacidad * sizeof(Zona));
+        if (temp == NULL) {
+            printf("\n  [!] Error de memoria. No se pudo registrar la zona.\n");
+            return;
+        }
+        *zonas = temp;
+        *capacidadZonas = nuevaCapacidad;
+    }
+
+    n = &(*zonas)[*numZonas];
     n->id = *numZonas + 1;
+    n->head = 0;
+    n->count = 0;
 
     printf("\n  --- REGISTRAR NUEVA ZONA ---\n");
     printf("  Nombre de la zona: ");
@@ -268,15 +311,18 @@ void registrarZona(Zona *zonas, int *numZonas){
 
     genHistorial(n, base);
 
-    n->historial[MAX_DIAS - 1] = n->actual;
+    if (n->count > 0) {
+        int pos = (n->head + n->count - 1) % MAX_DIAS;
+        n->historial[pos] = n->actual;
+    }
 
     (*numZonas)++;
-    guardarDatos(zonas, *numZonas);
+    guardarDatos(*zonas, *numZonas, limitesOMS, maxZonasPermitidas);
     printf("  Zona '%s' registrada exitosamente con ID %d.\n", n->nombre, n->id);
 }
 
-void registrarNiveles(Zona *zonas, int numZonas){
-    int i, d, idx;
+void registrarNiveles(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZonasPermitidas){
+    int i, idx;
 
     if (!verificarZonas(numZonas)) return;
 
@@ -288,21 +334,27 @@ void registrarNiveles(Zona *zonas, int numZonas){
 
     idx = leerEntero("  Seleccione zona por ID: ", 1, numZonas) - 1;
 
-    for (d = MAX_DIAS - 1; d > 0; d--)
-        zonas[idx].historial[d] = zonas[idx].historial[d - 1];
-    zonas[idx].historial[0] = zonas[idx].actual;
-
     printf("\n  Ingrese los nuevos niveles de contaminacion para '%s':\n", zonas[idx].nombre);
     leerContaminacion(&zonas[idx].actual);
 
     printf("\n  --- NUEVO ESTADO CLIMATICO ---\n");
     leerClima(&zonas[idx].climaActual);
 
-    guardarDatos(zonas, numZonas);
+    if (zonas[idx].count < MAX_DIAS) {
+        int pos = zonas[idx].count;
+        zonas[idx].historial[pos] = zonas[idx].actual;
+        zonas[idx].count++;
+    } else {
+        int pos = zonas[idx].head;
+        zonas[idx].historial[pos] = zonas[idx].actual;
+        zonas[idx].head = (zonas[idx].head + 1) % MAX_DIAS;
+    }
+
+    guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
     printf("  Niveles de la zona '%s' actualizados.\n", zonas[idx].nombre);
 }
 
-void monitoreoActual(Zona *zonas, int numZonas){
+void monitoreoActual(Zona *zonas, int numZonas, Contaminacion limitesOMS){
     int i;
     if (!verificarZonas(numZonas)) return;
 
@@ -314,7 +366,7 @@ void monitoreoActual(Zona *zonas, int numZonas){
         encabezadoZona(zonas[i].id, zonas[i].nombre);
         printf("  %-34s %10s   %s\n"
                "  ---------------------------------- ----------   ----------\n", "Contaminante", "Nivel", "Estado");
-        imprimirTabla(zonas[i].actual);
+        imprimirTabla(zonas[i].actual, limitesOMS);
         printf("  Clima actual: %.1f grados | Viento: %.1f km/h | Humedad: %.1f%%\n\n",
                zonas[i].climaActual.temperatura,
                zonas[i].climaActual.viento,
@@ -322,7 +374,7 @@ void monitoreoActual(Zona *zonas, int numZonas){
     }
 }
 
-void prediccion24h(Zona *zonas, int numZonas){
+void prediccion24h(Zona *zonas, int numZonas, Contaminacion limitesOMS){
     int i;
     float fc;
     Contaminacion prom, pred;
@@ -343,12 +395,12 @@ void prediccion24h(Zona *zonas, int numZonas){
 
         printf("  %-34s %10s   %10s   %s\n"
                "  ---------------------------------- ----------   ----------   -------------\n", "Contaminante", "Nivel Hoy", "Nivel Manana", "Estado");
-        imprimirTablaPrediccion(zonas[i].actual, pred);
+        imprimirTablaPrediccion(zonas[i].actual, pred, limitesOMS);
         printf("\n");
     }
 }
 
-void promediosHistoricos(Zona *zonas, int numZonas){
+void promediosHistoricos(Zona *zonas, int numZonas, Contaminacion limitesOMS){
     int i;
     Contaminacion prom;
 
@@ -361,12 +413,12 @@ void promediosHistoricos(Zona *zonas, int numZonas){
         encabezadoZona(zonas[i].id, zonas[i].nombre);
         printf("  %-34s %10s   %s\n"
                "  ---------------------------------- ----------   ----------\n", "Contaminante", "Promedio", "Limite max");
-        imprimirTabla(prom);
+        imprimirTabla(prom, limitesOMS);
         printf("\n");
     }
 }
 
-void alertasYRecomendaciones(Zona *zonas, int numZonas){
+void alertasYRecomendaciones(Zona *zonas, int numZonas, Contaminacion limitesOMS){
     int i, alerta;
     float fc;
     Contaminacion prom, pred;
@@ -412,29 +464,32 @@ void alertasYRecomendaciones(Zona *zonas, int numZonas){
     }
 }
 
-void mostrarLimites(void){
+void mostrarLimites(Contaminacion limitesOMS, int maxZonasPermitidas){
     printf("    Dioxido de Carbono (CO2)  : %.2f maximo\n"
            "    Dioxido de Azufre (SO2)   : %.2f maximo\n"
            "    Dioxido de Nitrogeno (NO2): %.2f maximo\n"
-           "    Particulas Finas (PM2.5)  : %.2f maximo\n", limitesOMS.co2, limitesOMS.so2, limitesOMS.no2, limitesOMS.pm25);
+           "    Particulas Finas (PM2.5)  : %.2f maximo\n"
+           "    Tope maximo de zonas      : %d permitidas\n", 
+           limitesOMS.co2, limitesOMS.so2, limitesOMS.no2, limitesOMS.pm25, maxZonasPermitidas);
 }
 
-void establecerLimites(void){
+void establecerLimites(Contaminacion *limitesOMS, int *maxZonasPermitidas){
     printf("\n  --- CONFIGURAR LIMITES MAXIMOS ---\n\n"
            "  Limites actuales permitidos:\n");
-    mostrarLimites();
+    mostrarLimites(*limitesOMS, *maxZonasPermitidas);
 
     printf("\n  Ingrese los nuevos limites maximos permitidos:\n");
-    limitesOMS.co2  = leerFlotante("  Dioxido de Carbono (CO2) [1-5000]:  ", 1, 5000);
-    limitesOMS.so2  = leerFlotante("  Dioxido de Azufre (SO2)  [1-500]:   ", 1, 500);
-    limitesOMS.no2  = leerFlotante("  Dioxido de Nitrogeno(NO2)[1-500]:   ", 1, 500);
-    limitesOMS.pm25 = leerFlotante("  Particulas Finas (PM2.5) [1-500]:   ", 1, 500);
+    limitesOMS->co2  = leerFlotante("  Dioxido de Carbono (CO2) [1-5000]:  ", 1, 5000);
+    limitesOMS->so2  = leerFlotante("  Dioxido de Azufre (SO2)  [1-500]:   ", 1, 500);
+    limitesOMS->no2  = leerFlotante("  Dioxido de Nitrogeno(NO2)[1-500]:   ", 1, 500);
+    limitesOMS->pm25 = leerFlotante("  Particulas Finas (PM2.5) [1-500]:   ", 1, 500);
+    *maxZonasPermitidas = leerEntero("  Tope maximo de zonas permitidas [1-1000]: ", 1, 1000);
 
     printf("\n  Limites actualizados en el sistema.\n");
-    mostrarLimites();
+    mostrarLimites(*limitesOMS, *maxZonasPermitidas);
 }
 
-void cargarDatosPrueba(Zona *zonas, int *numZonas){
+void cargarDatosPrueba(Zona **zonas, int *numZonas, int *capacidadZonas, Contaminacion limitesOMS, int maxZonasPermitidas){
     int i;
     char nombres[5][50] = {"Centro Historico", "Zona Norte Industrial",
                            "Zona Sur Residencial", "Zona Este Comercial",
@@ -457,19 +512,29 @@ void cargarDatosPrueba(Zona *zonas, int *numZonas){
         }
     }
 
-    *numZonas = 5;
-    for (i = 0; i < 5; i++){
-        zonas[i].id = i + 1;
-        strcpy(zonas[i].nombre, nombres[i]);
-        zonas[i].actual = datos[i];
-        zonas[i].climaActual = climas[i];
-        genHistorial(&zonas[i], datos[i]);
+    if (*capacidadZonas < 5) {
+        Zona *temp = (Zona *)realloc(*zonas, 5 * sizeof(Zona));
+        if (temp == NULL) {
+            printf("\n  [!] Error de memoria. No se pudieron cargar los datos de prueba.\n");
+            return;
+        }
+        *zonas = temp;
+        *capacidadZonas = 5;
     }
 
-    guardarDatos(zonas, *numZonas);
+    *numZonas = 5;
+    for (i = 0; i < 5; i++){
+        (*zonas)[i].id = i + 1;
+        strcpy((*zonas)[i].nombre, nombres[i]);
+        (*zonas)[i].actual = datos[i];
+        (*zonas)[i].climaActual = climas[i];
+        genHistorial(&(*zonas)[i], datos[i]);
+    }
+
+    guardarDatos(*zonas, *numZonas, limitesOMS, maxZonasPermitidas);
     printf("\n  Se cargaron 5 zonas de prueba (con datos altos para testear alertas).\n\n");
     for (i = 0; i < 5; i++)
-        printf("    %d. %s\n", zonas[i].id, zonas[i].nombre);
+        printf("    %d. %s\n", (*zonas)[i].id, (*zonas)[i].nombre);
         
     printf("\n  Nota: Los datos se guardan automaticamente.\n");
 }
