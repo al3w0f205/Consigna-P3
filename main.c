@@ -4,20 +4,18 @@
 
 int main(void){
     Contaminacion limitesOMS = {400.0f, 40.0f, 25.0f, 15.0f};
-    int maxZonasPermitidas = 10;
-    Zona *zonas = NULL;
+    int maxZonasPermitidas = 100;
+    Zona zonas[100];
     int numZonas = 0;
-    int capacidadZonas = 0;
     int opc = 0;
 
-    numZonas = cargarDatos(&zonas, &capacidadZonas, &limitesOMS, &maxZonasPermitidas);
+    numZonas = cargarDatos(zonas, &limitesOMS, &maxZonasPermitidas);
     if (numZonas > 0){
         printf("Se cargaron %d zonas desde '%s'.\n", numZonas, ARCHIVO_DATOS);
     } else {
         printf("[INFO] No se encontraron datos previos.\n");
         printf("Cargando zonas de prueba automaticamente...\n");
-        cargarDatosPrueba(&zonas, &numZonas, &capacidadZonas, limitesOMS, maxZonasPermitidas);
-        // guardarDatos ya es llamado dentro de cargarDatosPrueba
+        cargarDatosPrueba(zonas, &numZonas, limitesOMS, maxZonasPermitidas);
     }
 
     do {
@@ -29,7 +27,7 @@ int main(void){
             guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
             break;
         case 2:
-            registrarZona(&zonas, &numZonas, &capacidadZonas, maxZonasPermitidas, limitesOMS);
+            registrarZona(zonas, &numZonas, maxZonasPermitidas, limitesOMS);
             break;
         case 3:
             registrarNiveles(zonas, numZonas, limitesOMS, maxZonasPermitidas);
@@ -55,10 +53,5 @@ int main(void){
             break;
         }
     } while (opc != 9);
-
-    if (zonas != NULL) {
-        free(zonas);
-    }
-
     return 0;
 }
