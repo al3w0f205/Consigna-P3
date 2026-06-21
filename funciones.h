@@ -45,4 +45,4 @@ void promediosHistoricos(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void alertasYRecomendaciones(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void establecerLimites(Contaminacion *limitesOMS, int *maxZonasPermitidas);
 void cargarDatosPrueba(Zona zonas[], int *numZonas, Contaminacion limitesOMS, int maxZonasPermitidas);
-void exportarReporteTXT(Zona *zonas, int numZonas);
+void exportarReporteTXT(Zona *zonas, int numZonas, Contaminacion limitesOMS);

@@ -45,7 +45,7 @@ int main(void){
             alertasYRecomendaciones(zonas, numZonas, limitesOMS);
             break;
         case 8:
-            exportarReporteTXT(zonas, numZonas);
+            exportarReporteTXT(zonas, numZonas, limitesOMS);
             break;
         case 9:
             guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);

@@ -8,8 +8,12 @@ void limpiarBuffer(void){
 }
 
 void leerCadena(char *cadena, int n){
-    fgets(cadena, n, stdin);
-    int len = strlen(cadena) - 1;
+    int len;
+    if (fgets(cadena, n, stdin) == NULL){
+        cadena[0] = '\0';
+        return;
+    }
+    len = (int)strlen(cadena) - 1;
     if (len >= 0 && cadena[len] == '\n'){
         cadena[len] = '\0';
     }
@@ -17,12 +21,15 @@ void leerCadena(char *cadena, int n){
 
 int validarIntRango(int a, int b){
     int n = 0, aux = 0;
-    do
-    {
-        aux = scanf("%d",&n);
-        while((getchar())!='\n');
+    do {
+        aux = scanf("%d", &n);
+        limpiarBuffer();
+        if (aux == EOF){
+            printf("\n  [!] Entrada cerrada inesperadamente. Saliendo...\n");
+            exit(1);
+        }
         if (aux != 1 || n < a || n > b){
-            printf("  [!] Error: valor ingresado invalido\n");
+            printf("  [!] Error: valor ingresado invalido. Ingrese un entero entre %d y %d.\n", a, b);
             printf("  Vuelvalo a ingresar >> ");
         }
     } while (aux != 1 || n < a || n > b);
@@ -35,8 +42,12 @@ float leerFlotante(const char *mensaje, float min, float max){
     while (1){
         printf("%s", mensaje);
         res = scanf("%f", &valor);
+        if (res == EOF){
+            printf("\n  [!] Entrada cerrada inesperadamente. Saliendo...\n");
+            exit(1);
+        }
         if (res != 1){
-            printf("  [!] Entrada invalida. Ingrese un numero.\n");
+            printf("  [!] Entrada invalida. Ingrese un numero decimal (use punto, no coma).\n");
             limpiarBuffer();
             continue;
         }
@@ -85,7 +96,7 @@ int cargarDatos(Zona zonas[], Contaminacion *limitesOMS, int *maxZonasPermitidas
     }
     
     if (numZonas > 0){
-        if (fread(zonas, sizeof(Zona), numZonas, archivo) != numZonas){
+        if (fread(zonas, sizeof(Zona), (size_t)numZonas, archivo) != (size_t)numZonas){
             *limitesOMS = limBackup;
             *maxZonasPermitidas = maxBackup;
             fclose(archivo);
@@ -259,8 +270,13 @@ void registrarZona(Zona zonas[], int *numZonas, int maxZonasPermitidas, Contamin
     n->count = 0;
 
     printf("\n  --- REGISTRAR NUEVA ZONA ---\n");
-    printf("  Nombre de la zona: ");
-    leerCadena(n->nombre, 50);
+    do {
+        printf("  Nombre de la zona: ");
+        leerCadena(n->nombre, 50);
+        if (n->nombre[0] == '\0'){
+            printf("  [!] El nombre no puede estar vacio. Intentelo de nuevo.\n");
+        }
+    } while (n->nombre[0] == '\0');
 
     printf("\n  --- NIVELES ACTUALES DE CONTAMINACION ---\n");
     leerContaminacion(&n->actual);
@@ -480,31 +496,115 @@ void cargarDatosPrueba(Zona zonas[], int *numZonas, Contaminacion limitesOMS, in
     printf("\n  Nota: Los datos se guardan automaticamente.\n");
 }
 
-void exportarReporteTXT(Zona *zonas, int numZonas){
+void exportarReporteTXT(Zona *zonas, int numZonas, Contaminacion limitesOMS){
+    int i, alertas;
+    float fc;
+    Contaminacion prom, pred;
+    FILE *archivo;
+
     if (!verificarZonas(numZonas)) return;
 
-    FILE *archivo = fopen("reporte_calidad_aire.txt", "w");
+    archivo = fopen("reporte_calidad_aire.txt", "w");
     if (!archivo){
         printf("  [ERROR] No se pudo crear el archivo TXT.\n");
         return;
     }
 
     fprintf(archivo, "REPORTE DE CALIDAD DEL AIRE\n");
-    fprintf(archivo, "------------------------------------------------------\n\n");
+    fprintf(archivo, "======================================================\n\n");
+    fprintf(archivo, "LIMITES CONFIGURADOS (OMS):\n");
+    fprintf(archivo, "  CO2: %.2f | SO2: %.2f | NO2: %.2f | PM2.5: %.2f\n\n",
+            limitesOMS.co2, limitesOMS.so2, limitesOMS.no2, limitesOMS.pm25);
 
-    for (int i = 0; i < numZonas; i++){
-        Contaminacion prom = calcPromedios(&zonas[i]);
-        float fc = factorClimatico(&zonas[i].climaActual);
-        Contaminacion pred = calcPrediccion(&zonas[i], fc, prom);
+    for (i = 0; i < numZonas; i++){
+        prom = calcPromedios(&zonas[i]);
+        fc   = factorClimatico(&zonas[i].climaActual);
+        pred = calcPrediccion(&zonas[i], fc, prom);
 
-        fprintf(archivo, "ZONA: %s\n", zonas[i].nombre);
-        fprintf(archivo, "  Niveles Actuales:\n");
-        fprintf(archivo, "    CO2: %.2f | SO2: %.2f | NO2: %.2f | PM2.5: %.2f\n",
-                zonas[i].actual.co2, zonas[i].actual.so2, zonas[i].actual.no2, zonas[i].actual.pm25);
-        fprintf(archivo, "  Prediccion (24h):\n");
-        fprintf(archivo, "    CO2: %.2f | SO2: %.2f | NO2: %.2f | PM2.5: %.2f\n\n",
-                pred.co2, pred.so2, pred.no2, pred.pm25);
+        fprintf(archivo, "------------------------------------------------------\n");
+        fprintf(archivo, "ZONA %d: %s\n", zonas[i].id, zonas[i].nombre);
+        fprintf(archivo, "------------------------------------------------------\n");
+
+        fprintf(archivo, "\n  Condiciones Climaticas:\n");
+        fprintf(archivo, "    Temperatura: %.1f C | Viento: %.1f km/h | Humedad: %.1f%%\n",
+                zonas[i].climaActual.temperatura,
+                zonas[i].climaActual.viento,
+                zonas[i].climaActual.humedad);
+
+        fprintf(archivo, "\n  Niveles Actuales vs Limite:\n");
+        fprintf(archivo, "    CO2:   %.2f / %.2f  -> %s\n",
+                zonas[i].actual.co2,  limitesOMS.co2,
+                zonas[i].actual.co2  > limitesOMS.co2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    SO2:   %.2f / %.2f  -> %s\n",
+                zonas[i].actual.so2,  limitesOMS.so2,
+                zonas[i].actual.so2  > limitesOMS.so2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    NO2:   %.2f / %.2f  -> %s\n",
+                zonas[i].actual.no2,  limitesOMS.no2,
+                zonas[i].actual.no2  > limitesOMS.no2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    PM2.5: %.2f / %.2f  -> %s\n",
+                zonas[i].actual.pm25, limitesOMS.pm25,
+                zonas[i].actual.pm25 > limitesOMS.pm25 ? "EXCEDIDO" : "Normal");
+
+        fprintf(archivo, "\n  Promedios Historicos (30 dias) vs Limite:\n");
+        fprintf(archivo, "    CO2:   %.2f / %.2f  -> %s\n",
+                prom.co2,  limitesOMS.co2,  prom.co2  > limitesOMS.co2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    SO2:   %.2f / %.2f  -> %s\n",
+                prom.so2,  limitesOMS.so2,  prom.so2  > limitesOMS.so2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    NO2:   %.2f / %.2f  -> %s\n",
+                prom.no2,  limitesOMS.no2,  prom.no2  > limitesOMS.no2  ? "EXCEDIDO" : "Normal");
+        fprintf(archivo, "    PM2.5: %.2f / %.2f  -> %s\n",
+                prom.pm25, limitesOMS.pm25, prom.pm25 > limitesOMS.pm25 ? "EXCEDIDO" : "Normal");
+
+        fprintf(archivo, "\n  Prediccion 24h vs Limite:\n");
+        fprintf(archivo, "    CO2:   %.2f / %.2f  -> %s\n",
+                pred.co2,  limitesOMS.co2,  pred.co2  > limitesOMS.co2  ? "ALERTA" : "Normal");
+        fprintf(archivo, "    SO2:   %.2f / %.2f  -> %s\n",
+                pred.so2,  limitesOMS.so2,  pred.so2  > limitesOMS.so2  ? "ALERTA" : "Normal");
+        fprintf(archivo, "    NO2:   %.2f / %.2f  -> %s\n",
+                pred.no2,  limitesOMS.no2,  pred.no2  > limitesOMS.no2  ? "ALERTA" : "Normal");
+        fprintf(archivo, "    PM2.5: %.2f / %.2f  -> %s\n",
+                pred.pm25, limitesOMS.pm25, pred.pm25 > limitesOMS.pm25 ? "ALERTA" : "Normal");
+
+        fprintf(archivo, "\n  Alertas y Recomendaciones:\n");
+        alertas = 0;
+        if (zonas[i].actual.co2 > limitesOMS.co2){
+            fprintf(archivo, "    - HOY CO2 alto: Reducir combustibles fosiles y fomentar movilidad no motorizada.\n");
+            alertas++;
+        }
+        if (zonas[i].actual.so2 > limitesOMS.so2){
+            fprintf(archivo, "    - HOY SO2 alto: Inspeccionar industrias y proteger poblaciones vulnerables.\n");
+            alertas++;
+        }
+        if (zonas[i].actual.no2 > limitesOMS.no2){
+            fprintf(archivo, "    - HOY NO2 alto: Restringir trafico vehicular y promover transporte publico.\n");
+            alertas++;
+        }
+        if (zonas[i].actual.pm25 > limitesOMS.pm25){
+            fprintf(archivo, "    - HOY PM2.5 alto: Evitar actividades al aire libre y fomentar limpieza comunitaria.\n");
+            alertas++;
+        }
+        if (pred.co2 > limitesOMS.co2){
+            fprintf(archivo, "    - MANANA CO2: Preparar restricciones y activar protocolo de emergencia ambiental.\n");
+            alertas++;
+        }
+        if (pred.so2 > limitesOMS.so2){
+            fprintf(archivo, "    - MANANA SO2: Notificar a industrias para reducir emisiones y preparar alerta sanitaria.\n");
+            alertas++;
+        }
+        if (pred.no2 > limitesOMS.no2){
+            fprintf(archivo, "    - MANANA NO2: Planificar desvios de trafico e incrementar transporte publico.\n");
+            alertas++;
+        }
+        if (pred.pm25 > limitesOMS.pm25){
+            fprintf(archivo, "    - MANANA PM2.5: Emitir aviso de salud comunitaria para actividades al aire libre.\n");
+            alertas++;
+        }
+        if (alertas == 0){
+            fprintf(archivo, "    Calidad del aire buena. Sin alertas activas.\n");
+        }
+        fprintf(archivo, "\n");
     }
+
     fclose(archivo);
     printf("\n  Reporte exportado exitosamente a 'reporte_calidad_aire.txt'.\n");
 }
