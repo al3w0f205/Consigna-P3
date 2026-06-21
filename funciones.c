@@ -115,7 +115,7 @@ int menu(void){
 
 int verificarZonas(int n){
     if (n == 0){
-        printf("\n  [!] No hay zonas registradas. Use la opcion 2 o la 8 primero.\n");
+        printf("\n  [!] No hay zonas registradas. Use la opcion 2 primero.\n");
         return 0;
     }
     return 1;
@@ -234,7 +234,7 @@ int verificarYMostrarAlerta(float val, float lim, const char *param, const char 
 void leerContaminacion(Contaminacion *c){
     c->co2  = leerFlotante("  Nivel de Dioxido de Carbono (CO2) [0-2000]: ", 0, 2000);
     c->so2  = leerFlotante("  Nivel de Dioxido de Azufre  (SO2) [0-500]:  ", 0, 500);
-    c->no2  = leerFlotante("  Nivel de Dioxido Nitrogeno  (NO2) [0-500]:  ", 0, 500);
+    c->no2  = leerFlotante("  Nivel de Dioxido de Nitrogeno  (NO2) [0-500]:  ", 0, 500);
     c->pm25 = leerFlotante("  Nivel de Particulas Finas (PM2.5) [0-500]:  ", 0, 500);
 }
 
@@ -371,7 +371,7 @@ void promediosHistoricos(Zona *zonas, int numZonas, Contaminacion limitesOMS){
         prom = calcPromedios(&zonas[i]);
         encabezadoZona(zonas[i].id, zonas[i].nombre);
         printf("  %-34s %10s   %s\n"
-               "  ---------------------------------- ----------   ----------\n", "Contaminante", "Promedio", "Limite max");
+               "  ---------------------------------- ----------   ----------\n", "Contaminante", "Promedio", "Estado");
         imprimirTabla(prom, limitesOMS);
         printf("\n");
     }
@@ -432,8 +432,8 @@ void establecerLimites(Contaminacion *limitesOMS, int *maxZonasPermitidas){
     limitesOMS->so2  = leerFlotante("  Dioxido de Azufre (SO2)  [1-500]:   ", 1, 500);
     limitesOMS->no2  = leerFlotante("  Dioxido de Nitrogeno(NO2)[1-500]:   ", 1, 500);
     limitesOMS->pm25 = leerFlotante("  Particulas Finas (PM2.5) [1-500]:   ", 1, 500);
-    printf("  Tope maximo de zonas permitidas [1-1000]: ");
-    *maxZonasPermitidas = validarIntRango(1, 1000);
+    printf("  Tope maximo de zonas permitidas [1-100]: ");
+    *maxZonasPermitidas = validarIntRango(1, 100);
 
     printf("\n  Limites actualizados en el sistema.\n");
     mostrarLimites(*limitesOMS, *maxZonasPermitidas);

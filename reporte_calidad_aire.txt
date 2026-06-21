@@ -3,9 +3,9 @@ REPORTE DE CALIDAD DEL AIRE
 
 ZONA: Centro Historico
   Niveles Actuales:
-    CO2: 200.00 | SO2: 200.00 | NO2: 1.00 | PM2.5: 1.00
+    CO2: 520.00 | SO2: 22.00 | NO2: 45.00 | PM2.5: 30.00
   Prediccion (24h):
-    CO2: 316.01 | SO2: 110.57 | NO2: 19.07 | PM2.5: 12.88
+    CO2: 561.98 | SO2: 23.78 | NO2: 48.63 | PM2.5: 32.42
 
 ZONA: Zona Norte Industrial
   Niveles Actuales:
