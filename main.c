@@ -14,8 +14,8 @@ int main(void){
         printf("Se cargaron %d zonas desde '%s'.\n", numZonas, ARCHIVO_DATOS);
     } else {
         printf("[INFO] No se encontraron datos previos.\n");
-        printf("Cargando zonas de prueba automaticamente...\n");
-        cargarDatosPrueba(zonas, &numZonas, limitesOMS, maxZonasPermitidas);
+        printf("Inicializando datos de Quito, Ecuador...\n");
+        inicializarDatosQuito(zonas, &numZonas, limitesOMS, maxZonasPermitidas);
     }
 
     do {
@@ -23,8 +23,7 @@ int main(void){
 
         switch (opc){
         case 1:
-            establecerLimites(&limitesOMS, &maxZonasPermitidas);
-            guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
+            menuConfiguracion(zonas, numZonas, &limitesOMS, &maxZonasPermitidas);
             break;
         case 2:
             registrarZona(zonas, &numZonas, maxZonasPermitidas, limitesOMS);
@@ -33,25 +32,20 @@ int main(void){
             registrarNiveles(zonas, numZonas, limitesOMS, maxZonasPermitidas);
             break;
         case 4:
-            monitoreoActual(zonas, numZonas, limitesOMS);
+            menuMonitoreoConsultas(zonas, numZonas, limitesOMS);
             break;
         case 5:
-            prediccion24h(zonas, numZonas, limitesOMS);
-            break;
-        case 6:
-            promediosHistoricos(zonas, numZonas, limitesOMS);
-            break;
-        case 7:
-            alertasYRecomendaciones(zonas, numZonas, limitesOMS);
-            break;
-        case 8:
             exportarReporteTXT(zonas, numZonas, limitesOMS);
             break;
-        case 9:
+        case 6:
             guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
             printf("\n  Saliendo del sistema. Hasta luego!\n\n");
             break;
         }
-    } while (opc != 9);
+        if (opc != 6) {
+            printf("\n");
+            system("pause");
+        }
+    } while (opc != 6);
     return 0;
 }

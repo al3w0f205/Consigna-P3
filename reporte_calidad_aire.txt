@@ -1,33 +1,161 @@
 REPORTE DE CALIDAD DEL AIRE
+======================================================
+
+LIMITES CONFIGURADOS (OMS):
+  CO2: 400.00 | SO2: 40.00 | NO2: 25.00 | PM2.5: 15.00
+
+------------------------------------------------------
+ZONA 1: Centro Historico
 ------------------------------------------------------
 
-ZONA: Centro Historico
-  Niveles Actuales:
-    CO2: 520.00 | SO2: 22.00 | NO2: 45.00 | PM2.5: 30.00
-  Prediccion (24h):
-    CO2: 561.98 | SO2: 23.78 | NO2: 48.63 | PM2.5: 32.42
+  Condiciones Climaticas:
+    Temperatura: 16.5 C | Viento: 12.0 km/h | Humedad: 65.0%
 
-ZONA: Zona Norte Industrial
-  Niveles Actuales:
-    CO2: 480.00 | SO2: 25.00 | NO2: 38.00 | PM2.5: 22.00
-  Prediccion (24h):
-    CO2: 487.20 | SO2: 25.38 | NO2: 38.57 | PM2.5: 22.33
+  Niveles Actuales vs Limite:
+    CO2:   450.00 / 400.00  -> EXCEDIDO
+    SO2:   25.00 / 40.00  -> Normal
+    NO2:   30.00 / 25.00  -> EXCEDIDO
+    PM2.5: 18.00 / 15.00  -> EXCEDIDO
 
-ZONA: Zona Sur Residencial
-  Niveles Actuales:
-    CO2: 380.00 | SO2: 12.00 | NO2: 25.00 | PM2.5: 18.00
-  Prediccion (24h):
-    CO2: 379.39 | SO2: 11.98 | NO2: 24.96 | PM2.5: 17.97
+  Promedios Historicos (30 dias) vs Limite:
+    CO2:   463.50 / 400.00  -> EXCEDIDO
+    SO2:   25.75 / 40.00  -> Normal
+    NO2:   30.90 / 25.00  -> EXCEDIDO
+    PM2.5: 18.54 / 15.00  -> EXCEDIDO
 
-ZONA: Zona Este Comercial
-  Niveles Actuales:
-    CO2: 450.00 | SO2: 18.00 | NO2: 42.00 | PM2.5: 28.00
-  Prediccion (24h):
-    CO2: 462.77 | SO2: 18.51 | NO2: 43.19 | PM2.5: 28.79
+  Prediccion 24h vs Limite:
+    CO2:   448.69 / 400.00  -> ALERTA
+    SO2:   24.93 / 40.00  -> Normal
+    NO2:   29.91 / 25.00  -> ALERTA
+    PM2.5: 17.95 / 15.00  -> ALERTA
 
-ZONA: Zona Oeste Universitaria
-  Niveles Actuales:
-    CO2: 350.00 | SO2: 10.00 | NO2: 20.00 | PM2.5: 15.00
-  Prediccion (24h):
-    CO2: 327.60 | SO2: 9.36 | NO2: 18.72 | PM2.5: 14.04
+  Alertas y Recomendaciones:
+    - HOY CO2 alto: Reducir combustibles fosiles y fomentar movilidad no motorizada.
+    - HOY NO2 alto: Restringir trafico vehicular y promover transporte publico.
+    - HOY PM2.5 alto: Evitar actividades al aire libre y fomentar limpieza comunitaria.
+    - MANANA CO2: Preparar restricciones y activar protocolo de emergencia ambiental.
+    - MANANA NO2: Planificar desvios de trafico e incrementar transporte publico.
+    - MANANA PM2.5: Emitir aviso de salud comunitaria para actividades al aire libre.
+
+------------------------------------------------------
+ZONA 2: Belisario
+------------------------------------------------------
+
+  Condiciones Climaticas:
+    Temperatura: 15.0 C | Viento: 10.0 km/h | Humedad: 60.0%
+
+  Niveles Actuales vs Limite:
+    CO2:   350.00 / 400.00  -> Normal
+    SO2:   15.00 / 40.00  -> Normal
+    NO2:   20.00 / 25.00  -> Normal
+    PM2.5: 12.00 / 15.00  -> Normal
+
+  Promedios Historicos (30 dias) vs Limite:
+    CO2:   357.00 / 400.00  -> Normal
+    SO2:   15.30 / 40.00  -> Normal
+    NO2:   20.40 / 25.00  -> Normal
+    PM2.5: 12.24 / 15.00  -> Normal
+
+  Prediccion 24h vs Limite:
+    CO2:   341.80 / 400.00  -> Normal
+    SO2:   14.65 / 40.00  -> Normal
+    NO2:   19.53 / 25.00  -> Normal
+    PM2.5: 11.72 / 15.00  -> Normal
+
+  Alertas y Recomendaciones:
+    Calidad del aire buena. Sin alertas activas.
+
+------------------------------------------------------
+ZONA 3: Carapungo
+------------------------------------------------------
+
+  Condiciones Climaticas:
+    Temperatura: 18.0 C | Viento: 15.0 km/h | Humedad: 55.0%
+
+  Niveles Actuales vs Limite:
+    CO2:   480.00 / 400.00  -> EXCEDIDO
+    SO2:   28.00 / 40.00  -> Normal
+    NO2:   35.00 / 25.00  -> EXCEDIDO
+    PM2.5: 22.00 / 15.00  -> EXCEDIDO
+
+  Promedios Historicos (30 dias) vs Limite:
+    CO2:   484.80 / 400.00  -> EXCEDIDO
+    SO2:   28.28 / 40.00  -> Normal
+    NO2:   35.35 / 25.00  -> EXCEDIDO
+    PM2.5: 22.22 / 15.00  -> EXCEDIDO
+
+  Prediccion 24h vs Limite:
+    CO2:   461.52 / 400.00  -> ALERTA
+    SO2:   26.92 / 40.00  -> Normal
+    NO2:   33.65 / 25.00  -> ALERTA
+    PM2.5: 21.15 / 15.00  -> ALERTA
+
+  Alertas y Recomendaciones:
+    - HOY CO2 alto: Reducir combustibles fosiles y fomentar movilidad no motorizada.
+    - HOY NO2 alto: Restringir trafico vehicular y promover transporte publico.
+    - HOY PM2.5 alto: Evitar actividades al aire libre y fomentar limpieza comunitaria.
+    - MANANA CO2: Preparar restricciones y activar protocolo de emergencia ambiental.
+    - MANANA NO2: Planificar desvios de trafico e incrementar transporte publico.
+    - MANANA PM2.5: Emitir aviso de salud comunitaria para actividades al aire libre.
+
+------------------------------------------------------
+ZONA 4: El Camal
+------------------------------------------------------
+
+  Condiciones Climaticas:
+    Temperatura: 16.0 C | Viento: 8.0 km/h | Humedad: 70.0%
+
+  Niveles Actuales vs Limite:
+    CO2:   400.00 / 400.00  -> Normal
+    SO2:   18.00 / 40.00  -> Normal
+    NO2:   24.00 / 25.00  -> Normal
+    PM2.5: 14.00 / 15.00  -> Normal
+
+  Promedios Historicos (30 dias) vs Limite:
+    CO2:   400.00 / 400.00  -> Normal
+    SO2:   18.00 / 40.00  -> Normal
+    NO2:   24.00 / 25.00  -> Normal
+    PM2.5: 14.00 / 15.00  -> Normal
+
+  Prediccion 24h vs Limite:
+    CO2:   403.30 / 400.00  -> ALERTA
+    SO2:   18.15 / 40.00  -> Normal
+    NO2:   24.20 / 25.00  -> Normal
+    PM2.5: 14.12 / 15.00  -> Normal
+
+  Alertas y Recomendaciones:
+    - MANANA CO2: Preparar restricciones y activar protocolo de emergencia ambiental.
+
+------------------------------------------------------
+ZONA 5: Guamani
+------------------------------------------------------
+
+  Condiciones Climaticas:
+    Temperatura: 14.0 C | Viento: 20.0 km/h | Humedad: 75.0%
+
+  Niveles Actuales vs Limite:
+    CO2:   520.00 / 400.00  -> EXCEDIDO
+    SO2:   35.00 / 40.00  -> Normal
+    NO2:   42.00 / 25.00  -> EXCEDIDO
+    PM2.5: 28.00 / 15.00  -> EXCEDIDO
+
+  Promedios Historicos (30 dias) vs Limite:
+    CO2:   514.80 / 400.00  -> EXCEDIDO
+    SO2:   34.65 / 40.00  -> Normal
+    NO2:   41.58 / 25.00  -> EXCEDIDO
+    PM2.5: 27.72 / 15.00  -> EXCEDIDO
+
+  Prediccion 24h vs Limite:
+    CO2:   502.87 / 400.00  -> ALERTA
+    SO2:   33.85 / 40.00  -> Normal
+    NO2:   40.62 / 25.00  -> ALERTA
+    PM2.5: 27.08 / 15.00  -> ALERTA
+
+  Alertas y Recomendaciones:
+    - HOY CO2 alto: Reducir combustibles fosiles y fomentar movilidad no motorizada.
+    - HOY NO2 alto: Restringir trafico vehicular y promover transporte publico.
+    - HOY PM2.5 alto: Evitar actividades al aire libre y fomentar limpieza comunitaria.
+    - MANANA CO2: Preparar restricciones y activar protocolo de emergencia ambiental.
+    - MANANA NO2: Planificar desvios de trafico e incrementar transporte publico.
+    - MANANA PM2.5: Emitir aviso de salud comunitaria para actividades al aire libre.
 
