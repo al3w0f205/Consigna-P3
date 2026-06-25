@@ -130,7 +130,7 @@ void guardarDatos(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZo
         for (i = 0; i < numZonas; i++) {
             fwrite(&zonas[i].id, sizeof(int), 1, archivo);
             fwrite(zonas[i].nombre, sizeof(char), 50, archivo);
-            fwrite(zonas[i].historial, sizeof(Contaminacion), MAX_DIAS, archivo);
+            fwrite(zonas[i].historial, sizeof(RegistroHistorial), MAX_DIAS, archivo);
             fwrite(&zonas[i].head, sizeof(int), 1, archivo);
             fwrite(&zonas[i].count, sizeof(int), 1, archivo);
             fwrite(&zonas[i].actual, sizeof(Contaminacion), 1, archivo);
@@ -178,7 +178,7 @@ int cargarDatos(Zona **zonas, Contaminacion *limitesOMS, int *maxZonasPermitidas
         for (i = 0; i < numZonas; i++) {
             if (fread(&(*zonas)[i].id, sizeof(int), 1, archivo) != 1 ||
                 fread((*zonas)[i].nombre, sizeof(char), 50, archivo) != 50 ||
-                fread((*zonas)[i].historial, sizeof(Contaminacion), MAX_DIAS, archivo) != MAX_DIAS ||
+                fread((*zonas)[i].historial, sizeof(RegistroHistorial), MAX_DIAS, archivo) != MAX_DIAS ||
                 fread(&(*zonas)[i].head, sizeof(int), 1, archivo) != 1 ||
                 fread(&(*zonas)[i].count, sizeof(int), 1, archivo) != 1 ||
                 fread(&(*zonas)[i].actual, sizeof(Contaminacion), 1, archivo) != 1 ||
@@ -263,10 +263,10 @@ Contaminacion calcPromedios(Zona *z){
     
     for (i = 0; i < z->count; i++){
         int pos = (z->head + i) % MAX_DIAS;
-        prom.co2  += z->historial[pos].co2;
-        prom.so2  += z->historial[pos].so2;
-        prom.no2  += z->historial[pos].no2;
-        prom.pm25 += z->historial[pos].pm25;
+        prom.co2  += z->historial[pos].niveles.co2;
+        prom.so2  += z->historial[pos].niveles.so2;
+        prom.no2  += z->historial[pos].niveles.no2;
+        prom.pm25 += z->historial[pos].niveles.pm25;
     }
     prom.co2 /= z->count;  prom.so2 /= z->count;
     prom.no2 /= z->count;  prom.pm25 /= z->count;
@@ -299,16 +299,25 @@ Contaminacion calcPrediccion(Zona *z, float fc, Contaminacion prom){
 void genHistorial(Zona *z, Contaminacion base){
     int d;
     float f;
+    time_t ahora = time(NULL);
     
     z->head = 0;
     z->count = MAX_DIAS;
     
     for (d = 0; d < MAX_DIAS; d++){
+        time_t diaSim = ahora - (MAX_DIAS - d) * 24 * 3600;
+        struct tm *infoTiempo = localtime(&diaSim);
+        if (infoTiempo != NULL) {
+            strftime(z->historial[d].fechaHora, 20, "%Y-%m-%d %H:%M:%S", infoTiempo);
+        } else {
+            strcpy(z->historial[d].fechaHora, "2026-01-01 00:00:00");
+        }
+
         f = 1.0f + (float)((d * 7 + z->id * 13) % 21 - 10) / 100.0f;
-        z->historial[d].co2  = base.co2  * f;
-        z->historial[d].so2  = base.so2  * f;
-        z->historial[d].no2  = base.no2  * f;
-        z->historial[d].pm25 = base.pm25 * f;
+        z->historial[d].niveles.co2  = base.co2  * f;
+        z->historial[d].niveles.so2  = base.so2  * f;
+        z->historial[d].niveles.no2  = base.no2  * f;
+        z->historial[d].niveles.pm25 = base.pm25 * f;
     }
 }
 
@@ -447,8 +456,20 @@ void registrarZona(Zona **zonas, int *numZonas, int maxZonasPermitidas, Contamin
 
     if (n->count > 0) {
         int pos = (n->head + n->count - 1) % MAX_DIAS;
-        n->historial[pos] = n->actual;
+        n->historial[pos].niveles = n->actual;
+        time_t ahora = time(NULL);
+        struct tm *infoTiempo = localtime(&ahora);
+        if (infoTiempo != NULL) {
+            strftime(n->historial[pos].fechaHora, 20, "%Y-%m-%d %H:%M:%S", infoTiempo);
+        } else {
+            strcpy(n->historial[pos].fechaHora, "2026-06-25 00:00:00");
+        }
     }
+
+    if (n->actual.co2 > limitesOMS.co2) registrarAlertaLog(n->nombre, "CO2", n->actual.co2, limitesOMS.co2);
+    if (n->actual.so2 > limitesOMS.so2) registrarAlertaLog(n->nombre, "SO2", n->actual.so2, limitesOMS.so2);
+    if (n->actual.no2 > limitesOMS.no2) registrarAlertaLog(n->nombre, "NO2", n->actual.no2, limitesOMS.no2);
+    if (n->actual.pm25 > limitesOMS.pm25) registrarAlertaLog(n->nombre, "PM2.5", n->actual.pm25, limitesOMS.pm25);
 
     (*numZonas)++;
     guardarDatos(*zonas, *numZonas, limitesOMS, maxZonasPermitidas);
@@ -474,9 +495,23 @@ void registrarNiveles(Zona *zonas, int numZonas, Contaminacion limitesOMS, int m
     leerClima(&zonas[idx].climaActual);
 
     int pos = (zonas[idx].head + zonas[idx].count) % MAX_DIAS;
-    zonas[idx].historial[pos] = zonas[idx].actual;
+    zonas[idx].historial[pos].niveles = zonas[idx].actual;
+    
+    time_t ahora = time(NULL);
+    struct tm *infoTiempo = localtime(&ahora);
+    if (infoTiempo != NULL) {
+        strftime(zonas[idx].historial[pos].fechaHora, 20, "%Y-%m-%d %H:%M:%S", infoTiempo);
+    } else {
+        strcpy(zonas[idx].historial[pos].fechaHora, "2026-06-25 00:00:00");
+    }
+    
     if (zonas[idx].count < MAX_DIAS) zonas[idx].count++;
     else zonas[idx].head = (zonas[idx].head + 1) % MAX_DIAS;
+
+    if (zonas[idx].actual.co2 > limitesOMS.co2) registrarAlertaLog(zonas[idx].nombre, "CO2", zonas[idx].actual.co2, limitesOMS.co2);
+    if (zonas[idx].actual.so2 > limitesOMS.so2) registrarAlertaLog(zonas[idx].nombre, "SO2", zonas[idx].actual.so2, limitesOMS.so2);
+    if (zonas[idx].actual.no2 > limitesOMS.no2) registrarAlertaLog(zonas[idx].nombre, "NO2", zonas[idx].actual.no2, limitesOMS.no2);
+    if (zonas[idx].actual.pm25 > limitesOMS.pm25) registrarAlertaLog(zonas[idx].nombre, "PM2.5", zonas[idx].actual.pm25, limitesOMS.pm25);
 
     guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
     printf("  Niveles de la zona '%s' actualizados.\n", zonas[idx].nombre);
@@ -889,6 +924,11 @@ void menuConfiguracion(Zona *zonas, int numZonas, Contaminacion *limitesOMS, int
         printf("\n----------------------------------------------------------\n");
         printf("                 CONFIGURACION DEL SISTEMA\n");
         printf("----------------------------------------------------------\n");
+        printf("  Estado Actual del Sistema:\n");
+        printf("    Limites OMS: CO2: %.0f | SO2: %.0f | NO2: %.0f | PM2.5: %.0f\n",
+               limitesOMS->co2, limitesOMS->so2, limitesOMS->no2, limitesOMS->pm25);
+        printf("    Tope Maximo de Zonas: %d | Registradas: %d\n", *maxZonasPermitidas, numZonas);
+        printf("----------------------------------------------------------\n");
         printf("  1. Configurar limites de contaminacion y tope de zonas\n");
         printf("  2. Editar/renombrar una zona existente\n");
         printf("  3. Regresar al menu principal\n");
@@ -983,6 +1023,12 @@ void consultarZonaDetalle(Zona *zonas, int numZonas, Contaminacion limitesOMS) {
     fc = factorClimatico(&z->climaActual);
     pred = calcPrediccion(z, fc, prom);
 
+    if (z->count == 0) {
+        printf("  [NOTA] No se registran mediciones previas en el historial.\n\n");
+    } else {
+        printf("  [INFO] Historico basado en %d mediciones registradas.\n\n", z->count);
+    }
+
     printf("  %-25s %10.1f %10.1f %10.1f\n", "CO2", z->actual.co2, prom.co2, pred.co2);
     printf("  %-25s %10.1f %10.1f %10.1f\n", "SO2", z->actual.so2, prom.so2, pred.so2);
     printf("  %-25s %10.1f %10.1f %10.1f\n", "NO2", z->actual.no2, prom.no2, pred.no2);
@@ -992,4 +1038,23 @@ void consultarZonaDetalle(Zona *zonas, int numZonas, Contaminacion limitesOMS) {
     printf("\n  Alertas y Recomendaciones Activas:\n");
     imprimirAlertasGenerales(stdout, z, limitesOMS, pred);
     printf("----------------------------------------------------------\n");
+}
+
+void registrarAlertaLog(const char *nombreZona, const char *contaminante, float valor, float limite) {
+    FILE *logFile = fopen("alertas.log", "a");
+    if (logFile == NULL) {
+        printf("  [ERROR] No se pudo abrir/crear el archivo de log 'alertas.log'.\n");
+        return;
+    }
+    time_t ahora = time(NULL);
+    struct tm *infoTiempo = localtime(&ahora);
+    char fechaHora[20];
+    if (infoTiempo != NULL) {
+        strftime(fechaHora, sizeof(fechaHora), "%Y-%m-%d %H:%M:%S", infoTiempo);
+    } else {
+        strcpy(fechaHora, "2026-06-25 00:00:00");
+    }
+    fprintf(logFile, "[%s] ALERTA - Zona: %s | Contaminante: %s | Valor actual: %.2f | Limite OMS: %.2f\n",
+            fechaHora, nombreZona, contaminante, valor, limite);
+    fclose(logFile);
 }
