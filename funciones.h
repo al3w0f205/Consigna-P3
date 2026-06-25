@@ -29,23 +29,27 @@ typedef struct {
     Clima climaActual;
 } Zona;
 
+void limpiarPantalla(void);
+void pausarPantalla(void);
+void mostrarZonasResumidas(Zona *zonas, int numZonas);
 void limpiarBuffer(void);
 void leerCadena(char *cadena, int n);
 int validarIntRango(int a, int b);
 float leerFlotante(const char *mensaje, float min, float max);
 
 void guardarDatos(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZonasPermitidas);
-int cargarDatos(Zona zonas[], Contaminacion *limitesOMS, int *maxZonasPermitidas);
+int cargarDatos(Zona **zonas, Contaminacion *limitesOMS, int *maxZonasPermitidas);
 int menu(void);
-void registrarZona(Zona zonas[], int *numZonas, int maxZonasPermitidas, Contaminacion limitesOMS);
+void registrarZona(Zona **zonas, int *numZonas, int maxZonasPermitidas, Contaminacion limitesOMS);
 void registrarNiveles(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZonasPermitidas);
 void monitoreoActual(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void prediccion24h(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void promediosHistoricos(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void alertasYRecomendaciones(Zona *zonas, int numZonas, Contaminacion limitesOMS);
 void establecerLimites(Contaminacion *limitesOMS, int *maxZonasPermitidas);
-void inicializarDatosQuito(Zona zonas[], int *numZonas, Contaminacion limitesOMS, int maxZonasPermitidas);
+void inicializarDatosQuito(Zona **zonas, int *numZonas, Contaminacion limitesOMS, int maxZonasPermitidas);
 void exportarReporteTXT(Zona *zonas, int numZonas, Contaminacion limitesOMS);
+int imprimirAlertasGenerales(FILE *stream, Zona *zona, Contaminacion limitesOMS, Contaminacion pred);
 
 /**
  * @brief Compara si una cadena de texto contiene a otra subcadena ignorando mayúsculas y minúsculas.

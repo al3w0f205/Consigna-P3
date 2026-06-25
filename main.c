@@ -1,21 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <locale.h>
 #include "funciones.h"
 
 int main(void){
+    setlocale(LC_ALL, "Spanish");
     Contaminacion limitesOMS = {400.0f, 40.0f, 25.0f, 15.0f};
     int maxZonasPermitidas = 100;
-    Zona zonas[100];
+    Zona *zonas = NULL;
     int numZonas = 0;
     int opc = 0;
 
-    numZonas = cargarDatos(zonas, &limitesOMS, &maxZonasPermitidas);
+    numZonas = cargarDatos(&zonas, &limitesOMS, &maxZonasPermitidas);
     if (numZonas > 0){
         printf("Se cargaron %d zonas desde '%s'.\n", numZonas, ARCHIVO_DATOS);
     } else {
         printf("[INFO] No se encontraron datos previos.\n");
         printf("Inicializando datos de Quito, Ecuador...\n");
-        inicializarDatosQuito(zonas, &numZonas, limitesOMS, maxZonasPermitidas);
+        inicializarDatosQuito(&zonas, &numZonas, limitesOMS, maxZonasPermitidas);
     }
 
     do {
@@ -26,7 +28,7 @@ int main(void){
             menuConfiguracion(zonas, numZonas, &limitesOMS, &maxZonasPermitidas);
             break;
         case 2:
-            registrarZona(zonas, &numZonas, maxZonasPermitidas, limitesOMS);
+            registrarZona(&zonas, &numZonas, maxZonasPermitidas, limitesOMS);
             break;
         case 3:
             registrarNiveles(zonas, numZonas, limitesOMS, maxZonasPermitidas);
@@ -44,8 +46,10 @@ int main(void){
         }
         if (opc != 6) {
             printf("\n");
-            system("pause");
+            pausarPantalla();
         }
     } while (opc != 6);
+
+    free(zonas);
     return 0;
 }
