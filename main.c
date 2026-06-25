@@ -4,7 +4,7 @@
 #include "funciones.h"
 
 int main(void){
-    setlocale(LC_ALL, "Spanish");
+    setlocale(LC_CTYPE, "Spanish");
     Contaminacion limitesOMS = {400.0f, 40.0f, 25.0f, 15.0f};
     int maxZonasPermitidas = 100;
     Zona *zonas = NULL;
@@ -44,7 +44,7 @@ int main(void){
             printf("\n  Saliendo del sistema. Hasta luego!\n\n");
             break;
         }
-        if (opc != 6) {
+        if (opc != 6 && opc != 1 && opc != 4) {
             printf("\n");
             pausarPantalla();
         }

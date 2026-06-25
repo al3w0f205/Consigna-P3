@@ -45,6 +45,16 @@ void limpiarBuffer(void){
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
+int esCadenaVaciaOEspacios(const char *str) {
+    while (*str) {
+        if (!isspace((unsigned char)*str)) {
+            return 0;
+        }
+        str++;
+    }
+    return 1;
+}
+
 void leerCadena(char *cadena, int n){
     int len;
     if (fgets(cadena, n, stdin) == NULL){
@@ -54,6 +64,8 @@ void leerCadena(char *cadena, int n){
     len = (int)strlen(cadena) - 1;
     if (len >= 0 && cadena[len] == '\n'){
         cadena[len] = '\0';
+    } else {
+        limpiarBuffer();
     }
 }
 
@@ -105,13 +117,11 @@ void guardarDatos(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZo
         return;
     }
     
-    // Escribir limitesOMS campo por campo
     fwrite(&limitesOMS.co2, sizeof(float), 1, archivo);
     fwrite(&limitesOMS.so2, sizeof(float), 1, archivo);
     fwrite(&limitesOMS.no2, sizeof(float), 1, archivo);
     fwrite(&limitesOMS.pm25, sizeof(float), 1, archivo);
     
-    // Escribir maxZonasPermitidas y numZonas
     fwrite(&maxZonasPermitidas, sizeof(int), 1, archivo);
     fwrite(&numZonas, sizeof(int), 1, archivo);
     
@@ -132,6 +142,10 @@ void guardarDatos(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZo
 }
 
 int cargarDatos(Zona **zonas, Contaminacion *limitesOMS, int *maxZonasPermitidas){
+    if (*zonas != NULL) {
+        free(*zonas);
+        *zonas = NULL;
+    }
     int numZonas = 0;
     Contaminacion limBackup = *limitesOMS;
     int maxBackup = *maxZonasPermitidas;
@@ -139,7 +153,6 @@ int cargarDatos(Zona **zonas, Contaminacion *limitesOMS, int *maxZonasPermitidas
     FILE *archivo = fopen(ARCHIVO_DATOS, "rb");
     if (!archivo) return 0;
     
-    // Leer limitesOMS campo por campo
     if (fread(&limitesOMS->co2, sizeof(float), 1, archivo) != 1 ||
         fread(&limitesOMS->so2, sizeof(float), 1, archivo) != 1 ||
         fread(&limitesOMS->no2, sizeof(float), 1, archivo) != 1 ||
@@ -403,12 +416,11 @@ void registrarZona(Zona **zonas, int *numZonas, int maxZonasPermitidas, Contamin
         duplicado = 0;
         printf("  Nombre de la zona: ");
         leerCadena(n->nombre, 50);
-        if (n->nombre[0] == '\0'){
+        if (esCadenaVaciaOEspacios(n->nombre)){
             printf("  [!] El nombre no puede estar vacio. Intentelo de nuevo.\n");
             continue;
         }
 
-        // Validar si ya existe ese nombre en otra zona
         int i;
         for (i = 0; i < *numZonas; i++) {
             if (strcmp((*zonas)[i].nombre, n->nombre) == 0) {
@@ -419,7 +431,7 @@ void registrarZona(Zona **zonas, int *numZonas, int maxZonasPermitidas, Contamin
         if (duplicado) {
             printf("  [!] Error: Ya existe otra zona con el nombre '%s'. Intentelo de nuevo.\n", n->nombre);
         }
-    } while (n->nombre[0] == '\0' || duplicado);
+    } while (esCadenaVaciaOEspacios(n->nombre) || duplicado);
 
     printf("\n  --- NIVELES ACTUALES DE CONTAMINACION ---\n");
     leerContaminacion(&n->actual);
@@ -830,7 +842,7 @@ void editarZona(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZona
         opc = validarIntRango(0, numZonas);
 
         if (opc == 0) {
-            return; // Volver
+            return;
         }
 
         idx = opc - 1;
@@ -838,13 +850,12 @@ void editarZona(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZona
         printf("  Ingrese nuevo nombre de la zona: ");
         leerCadena(nuevoNombre, 50);
 
-        if (nuevoNombre[0] == '\0') {
+        if (esCadenaVaciaOEspacios(nuevoNombre)) {
             printf("  [!] El nombre no puede estar vacio. Edicion cancelada.\n");
             pausarPantalla();
             continue;
         }
 
-        // Validar si ya existe ese nombre en otra zona
         int duplicado = 0;
         for (i = 0; i < numZonas; i++) {
             if (i != idx && strcmp(zonas[i].nombre, nuevoNombre) == 0) {
@@ -859,17 +870,15 @@ void editarZona(Zona *zonas, int numZonas, Contaminacion limitesOMS, int maxZona
             continue;
         }
 
-        // Guardar nombre antiguo para el mensaje
         char nombreAnterior[50];
         strcpy(nombreAnterior, zonas[idx].nombre);
         strcpy(zonas[idx].nombre, nuevoNombre);
 
-        // Guardar en archivo
         guardarDatos(zonas, numZonas, limitesOMS, maxZonasPermitidas);
         printf("  [EXITO] Se actualizo el nombre de la zona ID %d:\n", zonas[idx].id);
         printf("          '%s' -> '%s'\n", nombreAnterior, zonas[idx].nombre);
         pausarPantalla();
-        break; // Salir de la función tras editar con éxito
+        break;
     } while (1);
 }
 
