@@ -202,7 +202,7 @@ int cargarDatos(Zona **zonas, Contaminacion *limitesOMS, int *maxZonasPermitidas
 int menu(void){
     limpiarPantalla();
     printf("\n----------------------------------------------------------\n");
-    printf("              CONTROL DE CALIDAD DEL AIRE\n");
+    printf("            SISTEMA SIGPA-QUITO (MONITOREO DE AIRE)\n");
     printf("----------------------------------------------------------\n");
     printf("   1. Configuracion del Sistema (Limites y Zonas)\n");
     printf("   2. Registrar Nueva Zona\n");
