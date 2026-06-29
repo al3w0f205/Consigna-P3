@@ -12,19 +12,22 @@ El sistema opera mediante una interfaz de consola modular y robusta que ofrece l
 
 1. **Configuracion del Sistema**
    * Ajuste de limites aceptables para cada contaminante (CO2, SO2, NO2, PM2.5) bajo directrices personalizables o de la OMS.
-   * Modificacion del tope maximo de zonas permitidas en el sistema (hasta un maximo de 100).
+   * Modificacion del tope maximo de zonas permitidas en el sistema (hasta un maximo de 100), con validacion para impedir que el nuevo tope sea inferior al numero de zonas actualmente registradas.
    * Edicion de nombres de zonas existentes con validacion para evitar duplicados.
+   * Eliminacion permanente de zonas existentes con confirmacion interactiva, reasignacion consecutiva de IDs y liberacion de memoria dinamica.
 
 2. **Registro de Nueva Zona**
    * Incorporacion dinamica de zonas urbanas utilizando asignacion dinamica de memoria (`realloc`).
    * Validacion de nombres vacios o con espacios en blanco.
    * Registro de niveles iniciales de contaminantes y condiciones climaticas de hoy.
    * Simulacion e inicializacion automatica de un historial de 30 dias de mediciones mediante una formula de fluctuacion determinista.
+   * Posibilidad de cancelar el registro en cualquier momento escribiendo `salir` en cualquier campo numerico o en el nombre de la zona, sin almacenar datos parciales ni corruptos.
 
 3. **Actualizacion Diaria (Niveles y Clima)**
    * Actualizacion de mediciones actuales de contaminacion y variables climaticas para una zona especifica.
    * Insercion del nuevo registro en una cola circular de tamaño fijo (`MAX_DIAS = 30`).
    * Registro automatico de eventos en una bitacora de auditoria (`alertas.log`) si alguna medicion excede los limites establecidos por la OMS, incluyendo la marca de tiempo de la medicion.
+   * Opcion de volver al menu principal ingresando `0` en la seleccion de zona, o cancelar la captura de datos escribiendo `salir` en cualquier campo numerico.
 
 4. **Monitoreo y Consultas**
    * **Monitoreo Actual:** Visualizacion resumida y detallada de la contaminacion actual en todas las zonas del sistema, comparandolas frente a los limites parametrizados.
@@ -36,13 +39,18 @@ El sistema opera mediante una interfaz de consola modular y robusta que ofrece l
    * Estimacion de los niveles de contaminacion para el dia de mañana mediante un algoritmo ponderado.
    * Calculo de un **Factor Climatico (fc)** dinamico basado en variables de temperatura, velocidad del viento y porcentaje de humedad.
    * Generacion de alertas preventivas tempranas si la prediccion sobrepasa los limites OMS.
+   * Si una zona no tiene historial previo, el promedio historico utiliza los niveles actuales como referencia en lugar de ceros, evitando predicciones artificialmente bajas.
 
 6. **Exportacion de Reportes**
    * Generacion de un archivo de texto plano (`reporte_calidad_aire.txt`) con el estado actual, promedios historicos de 30 dias, factores climaticos, predicciones y recomendaciones estructuradas de cada una de las zonas urbanas monitoreadas.
+   * El reporte incluye una marca de tiempo (`Generado el: AAAA-MM-DD HH:MM:SS`) que permite identificar la fecha y hora exacta de su generacion.
 
 7. **Persistencia de Datos**
    * Guardado y carga automatica en formato binario mediante el archivo `datos.dat`, previniendo la perdida de informacion historica.
    * Inicializacion por defecto con 5 zonas clave de la ciudad de Quito, Ecuador ("Centro Historico", "Belisario", "Carapungo", "El Camal" y "Guamani") en caso de no detectarse el archivo de datos previo.
+   * Deteccion de archivos corruptos o danados al inicio del programa, con opcion interactiva para que el usuario decida si desea sobrescribir el archivo con datos por defecto o salir del programa para conservar el archivo original.
+   * Validacion de sanidad de los campos `head`, `count` y `numZonas` leidos desde el archivo binario para prevenir accesos fuera de limites de memoria.
+   * Aseguramiento del terminador nulo (`\0`) en los nombres de zona leidos desde el archivo para prevenir desbordamientos de lectura de bufer.
 
 ---
 
@@ -77,11 +85,28 @@ Combina el nivel de hoy afectado por el factor climatico (con una ponderacion de
 
 $$\text{Prediccion} = (0.6 \times \text{Valor Actual} \times fc) + (0.4 \times \text{Promedio Historico})$$
 
+Si la zona no tiene mediciones previas en su historial (`count == 0`), el promedio historico se sustituye por los niveles actuales de la zona, evitando predicciones artificialmente bajas basadas en ceros.
+
 ### 3. Registro de Log de Alertas
 
 Cuando un usuario registra una zona o actualiza los niveles de contaminacion y estos superan el limite de la OMS configurado en el sistema, se invoca la funcion `registrarAlertaLog`. Esta funcion abre el archivo `alertas.log` en modo "append" (`a`) e inserta una linea con el siguiente formato:
 
 `[AAAA-MM-DD HH:MM:SS] ALERTA - Zona: <NombreZona> | Contaminante: <Tipo> | Valor actual: <Valor> | Limite OMS: <Limite>`
+
+El archivo de log cuenta con un mecanismo de rotacion automatica: si su tamaño supera los 50 KB, se trunca automaticamente al inicio de la siguiente escritura, insertando un encabezado que indica la rotacion para evitar el crecimiento indefinido del archivo.
+
+---
+
+## Robustez y Protecciones del Sistema
+
+El sistema implementa las siguientes medidas de proteccion para garantizar la integridad de los datos y una experiencia de usuario sin errores:
+
+* **Cancelacion interactiva:** El usuario puede escribir `salir` en cualquier campo de captura numerica (contaminantes, clima, limites) para abortar el proceso en curso sin almacenar datos parciales ni modificar el estado del sistema.
+* **Entrada transaccional:** Las funciones de registro y actualizacion recopilan todos los datos en variables temporales locales antes de confirmar los cambios en memoria, asegurando que una cancelacion a mitad de proceso no deje datos corruptos.
+* **Deteccion de archivos corruptos:** Al cargar `datos.dat`, el sistema diferencia entre un archivo inexistente y uno danado, ofreciendo al usuario la opcion de recuperacion o salida segura.
+* **Validacion de sanidad:** Los campos criticos leidos del archivo binario (`numZonas`, `head`, `count`) se validan contra rangos aceptables antes de utilizarse, previniendo accesos fuera de limites de memoria.
+* **Terminacion segura de cadenas:** Los nombres de zona leidos desde el archivo binario se aseguran con un terminador nulo explicito (`nombre[49] = '\0'`).
+* **Consistencia de limites:** El sistema impide configurar un tope maximo de zonas inferior al numero de zonas actualmente registradas.
 
 ---
 
@@ -89,7 +114,7 @@ Cuando un usuario registra una zona o actualiza los niveles de contaminacion y e
 
 El repositorio se compone de tres archivos principales:
 
-* **`main.c`**: Punto de entrada del programa. Administra el bucle principal de ejecucion y la carga inicial del archivo de persistencia binaria (`datos.dat`).
+* **`main.c`**: Punto de entrada del programa. Administra el bucle principal de ejecucion, la carga inicial del archivo de persistencia binaria (`datos.dat`) y el manejo de errores de carga (archivo corrupto o inexistente).
 * **`funciones.h`**: Contiene la declaracion de las estructuras de datos (`Clima`, `Contaminacion`, `RegistroHistorial`, `Zona`), la definicion de constantes y los prototipos de todas las funciones operativas del sistema.
 * **`funciones.c`**: Implementacion de la logica de negocio, algoritmos matematicos, interaccion de consola (entradas/salidas) y manejo de archivos.
 
