@@ -11,10 +11,24 @@ int main(void){
     int numZonas = 0;
     int opc = 0;
 
-    numZonas = cargarDatos(&zonas, &limitesOMS, &maxZonasPermitidas);
-    if (numZonas > 0){
+    int carga = cargarDatos(&zonas, &limitesOMS, &maxZonasPermitidas);
+    if (carga >= 0){
+        numZonas = carga;
         printf("Se cargaron %d zonas desde '%s'.\n", numZonas, ARCHIVO_DATOS);
+    } else if (carga == -1) {
+        printf("\n[ERROR CRITICO] El archivo '%s' existe pero esta danado o corrupto.\n", ARCHIVO_DATOS);
+        printf("¿Desea sobrescribirlo con los datos por defecto? (1: Si, 2: Salir del programa)\n");
+        printf(">> ");
+        int opcCorr = validarIntRango(1, 2);
+        if (opcCorr == 2) {
+            printf("Saliendo del programa para evitar perder el archivo danado.\n");
+            free(zonas);
+            return 1;
+        }
+        printf("Inicializando datos de Quito, Ecuador...\n");
+        inicializarDatosQuito(&zonas, &numZonas, limitesOMS, maxZonasPermitidas);
     } else {
+        // carga == -2 (el archivo no existe)
         printf("[INFO] No se encontraron datos previos.\n");
         printf("Inicializando datos de Quito, Ecuador...\n");
         inicializarDatosQuito(&zonas, &numZonas, limitesOMS, maxZonasPermitidas);
@@ -25,7 +39,7 @@ int main(void){
 
         switch (opc){
         case 1:
-            menuConfiguracion(zonas, numZonas, &limitesOMS, &maxZonasPermitidas);
+            menuConfiguracion(&zonas, &numZonas, &limitesOMS, &maxZonasPermitidas);
             break;
         case 2:
             registrarZona(&zonas, &numZonas, maxZonasPermitidas, limitesOMS);
