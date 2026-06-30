@@ -5,7 +5,8 @@
 
 int main(void){
     setlocale(LC_CTYPE, "Spanish");
-    Contaminacion limitesOMS = {400.0f, 40.0f, 25.0f, 15.0f};
+    // Limites de calidad del aire para Ecuador (NECA - TULAS Libro VI Anexo 4)
+    Contaminacion limitesOMS = {500.0f, 125.0f, 100.0f, 50.0f};
     int maxZonasPermitidas = 100;
     Zona *zonas = NULL;
     int numZonas = 0;

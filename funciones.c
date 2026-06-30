@@ -728,11 +728,11 @@ void inicializarDatosQuito(Zona **zonas, int *numZonas, Contaminacion limitesOMS
         "Guamani"
     };
     Contaminacion datos[5] = {
-        {450.0f, 25.0f, 30.0f, 18.0f},
-        {350.0f, 15.0f, 20.0f, 12.0f},
-        {480.0f, 28.0f, 35.0f, 22.0f},
-        {400.0f, 18.0f, 24.0f, 14.0f},
-        {520.0f, 35.0f, 42.0f, 28.0f}
+        {510.0f, 45.0f, 105.0f, 38.0f}, // Centro Historico: Exceso CO2 y NO2
+        {440.0f, 30.0f, 65.0f, 22.0f},  // Belisario: Normales
+        {490.0f, 130.0f, 85.0f, 52.0f}, // Carapungo: Exceso SO2 y PM2.5
+        {410.0f, 35.0f, 50.0f, 28.0f},  // El Camal: Normales
+        {540.0f, 145.0f, 115.0f, 62.0f} // Guamani: Exceso todos
     };
     Clima climas[5] = {
         {16.5f, 12.0f, 65.0f},
