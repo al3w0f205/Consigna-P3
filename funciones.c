@@ -1133,12 +1133,13 @@ void menuMonitoreoConsultas(Zona *zonas, int numZonas, Contaminacion limitesOMS)
         printf("----------------------------------------------------------\n");
         printf("  1. Ver resumen de todas las zonas (Monitoreo Actual)\n");
         printf("  2. Consultar una zona especifica en detalle\n");
-        printf("  3. Buscar zona por nombre (coincidencia parcial)\n");
-        printf("  4. Filtrar zonas que superan limites de la OMS\n");
-        printf("  5. Regresar al menu principal\n");
+        printf("  3. Ver prediccion a 24 horas global (todas las zonas)\n");
+        printf("  4. Buscar zona por nombre (coincidencia parcial)\n");
+        printf("  5. Filtrar zonas que superan limites de la OMS\n");
+        printf("  6. Regresar al menu principal\n");
         printf("----------------------------------------------------------\n");
         printf(">> ");
-        opc = validarIntRango(1, 5);
+        opc = validarIntRango(1, 6);
 
         switch (opc) {
         case 1:
@@ -1151,17 +1152,22 @@ void menuMonitoreoConsultas(Zona *zonas, int numZonas, Contaminacion limitesOMS)
             pausarPantalla();
             break;
         case 3:
-            buscarZonasPorNombre(zonas, numZonas);
+            limpiarPantalla();
+            prediccion24h(zonas, numZonas, limitesOMS);
             pausarPantalla();
             break;
         case 4:
-            filtrarZonasExcedidas(zonas, numZonas, limitesOMS);
+            buscarZonasPorNombre(zonas, numZonas);
             pausarPantalla();
             break;
         case 5:
+            filtrarZonasExcedidas(zonas, numZonas, limitesOMS);
+            pausarPantalla();
+            break;
+        case 6:
             break;
         }
-    } while (opc != 5);
+    } while (opc != 6);
 }
 
 void consultarZonaDetalle(Zona *zonas, int numZonas, Contaminacion limitesOMS) {
